@@ -7,7 +7,6 @@ import core.serializer.CommonSerializer;
 import core.transport.RpcClient;
 import core.codec.CommonDecoder;
 import core.codec.CommonEncoder;
-import core.serializer.KryoSerializer;
 import exception.RpcException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -17,10 +16,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import registry.NacosServiceDiscovery;
-import registry.NacosServiceRegistry;
-import registry.ServiceDiscovery;
-import registry.ServiceRegistry;
+import core.registry.NacosServiceDiscovery;
+import core.registry.ServiceDiscovery;
 import util.RpcMessageChecker;
 
 import java.net.InetSocketAddress;
@@ -28,7 +25,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class NettyClient implements RpcClient {
     private static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
+    private static final EventLoopGroup group;
     private static final Bootstrap bootstrap;
+
     private final ServiceDiscovery serviceDiscovery;
 
     private CommonSerializer serializer;
@@ -38,7 +37,7 @@ public class NettyClient implements RpcClient {
     }
 
     static {
-        EventLoopGroup group = new NioEventLoopGroup();
+        group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
         bootstrap.group(group)
                 .channel(NioSocketChannel.class)
@@ -78,11 +77,12 @@ public class NettyClient implements RpcClient {
                 RpcMessageChecker.check(rpcRequest, rpcResponse);
                 result.set(rpcResponse.getData());
             } else {
-                channel.close();
-                System.exit(0);
+                group.shutdownGracefully();
+                return null;
             }
         } catch (InterruptedException e) {
             logger.error("发送消息时有错误发生: ", e);
+            Thread.currentThread().interrupt();
         }
         return result.get();
     }

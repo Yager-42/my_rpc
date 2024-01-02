@@ -1,4 +1,4 @@
-package server;
+package core.handler;
 
 import common.entity.RpcRequest;
 import common.entity.RpcResponse;
@@ -19,26 +19,20 @@ public class RequestHandler {
     }
 
     public Object handle(RpcRequest rpcRequest){
-        Object res = null;
         Object service = serviceProvider.getServiceProvider(rpcRequest.getInterfaceName());
-        try {
-            res = invokeTargetMethod(rpcRequest,service);
-            logger.info("服务:{} 成功调用方法:{}", rpcRequest.getInterfaceName(), rpcRequest.getMethodName());
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return res;
+        return invokeTargetMethod(rpcRequest, service);
     }
 
-    private Object invokeTargetMethod(RpcRequest rpcRequest, Object service) throws IllegalAccessException, InvocationTargetException {
+    private Object invokeTargetMethod(RpcRequest rpcRequest, Object service){
+        Object result;
         Method method;
         try {
             method = service.getClass().getMethod(rpcRequest.getMethodName(), rpcRequest.getParamTypes());
-        } catch (NoSuchMethodException e) {
+            result = method.invoke(service,rpcRequest.getParameters());
+            logger.info("服务:{} 成功调用方法:{}", rpcRequest.getInterfaceName(), rpcRequest.getMethodName());
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             return RpcResponse.fail(ResponseCode.NOT_FOUND_METHOD, rpcRequest.getRequestId());
         }
-        return method.invoke(service, rpcRequest.getParameters());
+        return result;
     }
 }

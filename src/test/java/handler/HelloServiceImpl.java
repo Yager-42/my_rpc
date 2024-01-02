@@ -1,4 +1,4 @@
-package server;
+package handler;
 
 import api.HelloObject;
 import api.HelloService;

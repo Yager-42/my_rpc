@@ -1,4 +1,4 @@
-package registry;
+package core.registry;
 
 import java.net.InetSocketAddress;
 

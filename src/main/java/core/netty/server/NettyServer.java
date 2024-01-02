@@ -3,8 +3,8 @@ package core.netty.server;
 import common.enumerate.RpcError;
 import core.codec.CommonDecoder;
 import core.codec.CommonEncoder;
+import core.hook.ShutdownHook;
 import core.serializer.CommonSerializer;
-import core.serializer.KryoSerializer;
 import core.transport.RpcServer;
 import exception.RpcException;
 import io.netty.bootstrap.ServerBootstrap;
@@ -18,8 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import provider.ServiceProvider;
 import provider.ServiceProviderImpl;
-import registry.NacosServiceRegistry;
-import registry.ServiceRegistry;
+import core.registry.NacosServiceRegistry;
+import core.registry.ServiceRegistry;
 
 import java.net.InetSocketAddress;
 
@@ -82,6 +82,8 @@ public class NettyServer implements RpcServer {
                         }
                     });
             ChannelFuture future = serverBootstrap.bind(host,port).sync();
+            //执行完后自动清空nacos注册的服务
+            ShutdownHook.getShutdownHook().addClearAllHook();
             future.channel().closeFuture().sync();
         }catch (InterruptedException e){
             logger.error("启动服务器时有错误发生: ", e);

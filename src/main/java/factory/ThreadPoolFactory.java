@@ -1,4 +1,4 @@
-package util;
+package factory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
