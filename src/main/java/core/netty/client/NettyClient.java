@@ -25,8 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class NettyClient implements RpcClient {
     private static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
-    private static final EventLoopGroup group;
-    private static final Bootstrap bootstrap;
+
 
     private final ServiceDiscovery serviceDiscovery;
 
@@ -42,13 +41,7 @@ public class NettyClient implements RpcClient {
         this.serializer = CommonSerializer.getByCode(serializer);
     }
 
-    static {
-        group = new NioEventLoopGroup();
-        bootstrap = new Bootstrap();
-        bootstrap.group(group)
-                .channel(NioSocketChannel.class)
-                .option(ChannelOption.SO_KEEPALIVE, true);
-    }
+
 
     @Override
     public Object sendRequest(RpcRequest rpcRequest) {
@@ -56,15 +49,7 @@ public class NettyClient implements RpcClient {
             logger.error("未设置序列化器");
             throw new RpcException(RpcError.SERIALIZER_NOT_FOUND);
         }
-        bootstrap.handler(new ChannelInitializer<SocketChannel>() {
-            @Override
-            protected void initChannel(SocketChannel ch) {
-                ChannelPipeline pipeline = ch.pipeline();
-                pipeline.addLast(new CommonDecoder())
-                        .addLast(new CommonEncoder(serializer))
-                        .addLast(new NettyClientHandler());
-            }
-        });
+
         AtomicReference<Object> result = new AtomicReference<>(null);
         try {
             InetSocketAddress inetSocketAddress = serviceDiscovery.lookupService(rpcRequest.getInterfaceName());
@@ -83,7 +68,7 @@ public class NettyClient implements RpcClient {
                 RpcMessageChecker.check(rpcRequest, rpcResponse);
                 result.set(rpcResponse.getData());
             } else {
-                group.shutdownGracefully();
+
                 return null;
             }
         } catch (InterruptedException e) {
