@@ -33,8 +33,8 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RpcRequest> 
                 logger.info("服务器接收到请求: {}", rpcRequest);
                 Object result = requestHandler.handle(rpcRequest);
                 ChannelFuture future = channelHandlerContext.writeAndFlush(RpcResponse.success(result, rpcRequest.getRequestId()));
-                //向channelfuture添加一个监听器，以检测是否所有数据包都被发送，然后关闭该通道
-                future.addListener(ChannelFutureListener.CLOSE);
+                //向channelfuture添加一个监听器，以检测是否所有数据包都被发送，此连接为长连接，当且仅当遇到错误时才释放
+                future.addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
             } finally {
                 ReferenceCountUtil.release(rpcRequest);
             }

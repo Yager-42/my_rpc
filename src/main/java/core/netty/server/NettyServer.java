@@ -4,6 +4,7 @@ import common.enumerate.RpcError;
 import core.codec.CommonDecoder;
 import core.codec.CommonEncoder;
 import core.hook.ShutdownHook;
+import core.netty.client.NettyClient;
 import core.serializer.CommonSerializer;
 import core.transport.RpcServer;
 import exception.RpcException;
@@ -31,13 +32,22 @@ public class NettyServer implements RpcServer {
     private final ServiceRegistry serviceRegistry;
     private final ServiceProvider serviceProvider;
 
-    private CommonSerializer serializer;
+    private final CommonSerializer serializer;
 
     public NettyServer(String host, int port) {
         this.host = host;
         this.port = port;
+        this.serializer = CommonSerializer.getByCode(DEFAULT_SERIALIZER);
         serviceRegistry = new NacosServiceRegistry();
         serviceProvider = new ServiceProviderImpl();
+    }
+
+    public NettyServer(String host, int port, Integer serializer){
+        this.host = host;
+        this.port = port;
+        serviceRegistry = new NacosServiceRegistry();
+        serviceProvider = new ServiceProviderImpl();
+        this.serializer = CommonSerializer.getByCode(serializer);
     }
 
     @Override
@@ -52,12 +62,9 @@ public class NettyServer implements RpcServer {
     }
 
     @Override
-    public void setSerializer(CommonSerializer serializer) {
-        this.serializer = serializer;
-    }
-
-    @Override
     public void start() {
+        //执行完后自动清空nacos注册的服务
+        ShutdownHook.getShutdownHook().addClearAllHook();
         if(serializer == null) {
             logger.error("未设置序列化器");
             throw new RpcException(RpcError.SERIALIZER_NOT_FOUND);
@@ -82,8 +89,6 @@ public class NettyServer implements RpcServer {
                         }
                     });
             ChannelFuture future = serverBootstrap.bind(host,port).sync();
-            //执行完后自动清空nacos注册的服务
-            ShutdownHook.getShutdownHook().addClearAllHook();
             future.channel().closeFuture().sync();
         }catch (InterruptedException e){
             logger.error("启动服务器时有错误发生: ", e);
