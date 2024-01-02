@@ -2,6 +2,6 @@ package provider;
 
 public interface ServiceProvider {
 
-    public <T> void addServiceProvider(T service);
+    <T> void addServiceProvider(T service, Class<T> serviceClass);
     public Object getServiceProvider(String serviceName);
 }
