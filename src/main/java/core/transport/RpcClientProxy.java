@@ -1,6 +1,7 @@
 package core.transport;
 
 import common.entity.RpcRequest;
+import common.entity.RpcResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,6 +9,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class RpcClientProxy implements InvocationHandler {
     private final RpcClient client;
@@ -32,6 +35,14 @@ public class RpcClientProxy implements InvocationHandler {
                 .paramTypes(method.getParameterTypes())
                 .heartBeat(false)
                 .build();
-        return client.sendRequest(rpcRequest);
+        Object res  = null;
+        CompletableFuture<RpcResponse> completableFuture = (CompletableFuture<RpcResponse>) client.sendRequest(rpcRequest);
+        try {
+            res = completableFuture.get().getData();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("方法调用请求发送失败", e);
+            return null;
+        }
+        return res;
     }
 }

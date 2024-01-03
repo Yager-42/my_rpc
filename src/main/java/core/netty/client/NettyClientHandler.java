@@ -3,6 +3,7 @@ package core.netty.client;
 import common.entity.RpcRequest;
 import common.entity.RpcResponse;
 import core.serializer.CommonSerializer;
+import factory.SingletonFactory;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -18,13 +19,16 @@ import java.net.InetSocketAddress;
 
 public class NettyClientHandler extends SimpleChannelInboundHandler<RpcResponse> {
     private static final Logger logger = LoggerFactory.getLogger(NettyClientHandler.class);
+    private final UnprocessedRequests unprocessedRequests;
+
+    public NettyClientHandler() {
+        this.unprocessedRequests = SingletonFactory.getInstance(UnprocessedRequests.class);
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, RpcResponse rpcResponse) throws Exception {
         logger.info(String.format("客户端接收到消息: %s", rpcResponse));
-        AttributeKey<RpcResponse> key = AttributeKey.valueOf("rpcResponse" + rpcResponse.getRequestId());
-        channelHandlerContext.channel().attr(key).set(rpcResponse);
-        channelHandlerContext.channel().close();
+        unprocessedRequests.complete(rpcResponse);
         ReferenceCountUtil.release(rpcResponse);
     }
 
