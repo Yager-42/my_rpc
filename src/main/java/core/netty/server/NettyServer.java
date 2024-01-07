@@ -6,6 +6,7 @@ import core.codec.CommonEncoder;
 import core.hook.ShutdownHook;
 import core.netty.client.NettyClient;
 import core.serializer.CommonSerializer;
+import core.transport.AbstractRpcServer;
 import core.transport.RpcServer;
 import exception.RpcException;
 import io.netty.bootstrap.ServerBootstrap;
@@ -26,13 +27,7 @@ import core.registry.ServiceRegistry;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
-public class NettyServer implements RpcServer {
-    private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
-    private final String host;
-    private final int port;
-
-    private final ServiceRegistry serviceRegistry;
-    private final ServiceProvider serviceProvider;
+public class NettyServer extends AbstractRpcServer {
 
     private final CommonSerializer serializer;
 
@@ -40,8 +35,8 @@ public class NettyServer implements RpcServer {
         this.host = host;
         this.port = port;
         this.serializer = CommonSerializer.getByCode(DEFAULT_SERIALIZER);
-        serviceRegistry = new NacosServiceRegistry();
-        serviceProvider = new ServiceProviderImpl();
+        this.serviceRegistry = new NacosServiceRegistry();
+        this.serviceProvider = new ServiceProviderImpl();
     }
 
     public NettyServer(String host, int port, Integer serializer){
@@ -50,17 +45,7 @@ public class NettyServer implements RpcServer {
         serviceRegistry = new NacosServiceRegistry();
         serviceProvider = new ServiceProviderImpl();
         this.serializer = CommonSerializer.getByCode(serializer);
-    }
-
-    @Override
-    public <T> void publishService(T service, Class<T> serviceClass) {
-        if(serializer==null){
-            logger.error("未设置序列化器");
-            throw new RpcException(RpcError.SERIALIZER_NOT_FOUND);
-        }
-        serviceProvider.addServiceProvider(service, serviceClass);
-        serviceRegistry.register(serviceClass.getCanonicalName(),new InetSocketAddress(host,port));
-        start();
+        scanService();
     }
 
     @Override

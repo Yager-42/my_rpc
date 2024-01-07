@@ -3,6 +3,8 @@ package core.netty.client;
 import common.entity.RpcRequest;
 import common.entity.RpcResponse;
 import common.enumerate.RpcError;
+import core.loadbalancer.LoadBalancer;
+import core.loadbalancer.RandomLoadBalancer;
 import core.serializer.CommonSerializer;
 import core.transport.RpcClient;
 import core.codec.CommonDecoder;
@@ -36,13 +38,19 @@ public class NettyClient implements RpcClient {
     private final UnprocessedRequests unprocessedRequests;
 
     public NettyClient() {
-        this.serviceDiscovery = new NacosServiceDiscovery();
+        this.serviceDiscovery = new NacosServiceDiscovery(new RandomLoadBalancer());
         this.serializer = CommonSerializer.getByCode(DEFAULT_SERIALIZER);
         this.unprocessedRequests = SingletonFactory.getInstance(UnprocessedRequests.class);
     }
 
     public NettyClient(Integer serializer){
-        this.serviceDiscovery = new NacosServiceDiscovery();
+        this.serviceDiscovery = new NacosServiceDiscovery(new RandomLoadBalancer());
+        this.serializer = CommonSerializer.getByCode(serializer);
+        this.unprocessedRequests = SingletonFactory.getInstance(UnprocessedRequests.class);
+    }
+
+    public NettyClient(Integer serializer, LoadBalancer loadBalancer) {
+        this.serviceDiscovery = new NacosServiceDiscovery(loadBalancer);
         this.serializer = CommonSerializer.getByCode(serializer);
         this.unprocessedRequests = SingletonFactory.getInstance(UnprocessedRequests.class);
     }

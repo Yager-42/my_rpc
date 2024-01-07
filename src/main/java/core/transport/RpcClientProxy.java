@@ -4,6 +4,7 @@ import common.entity.RpcRequest;
 import common.entity.RpcResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.RpcMessageChecker;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -35,14 +36,15 @@ public class RpcClientProxy implements InvocationHandler {
                 .paramTypes(method.getParameterTypes())
                 .heartBeat(false)
                 .build();
-        Object res  = null;
+        RpcResponse rpcResponse = null;
         CompletableFuture<RpcResponse> completableFuture = (CompletableFuture<RpcResponse>) client.sendRequest(rpcRequest);
         try {
-            res = completableFuture.get().getData();
+            rpcResponse = completableFuture.get();
         } catch (InterruptedException | ExecutionException e) {
             logger.error("方法调用请求发送失败", e);
             return null;
         }
-        return res;
+        RpcMessageChecker.check(rpcRequest, rpcResponse);
+        return rpcResponse.getData();
     }
 }

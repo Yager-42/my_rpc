@@ -1,10 +1,12 @@
 package handler;
 
+import annotation.Service;
 import api.HelloObject;
 import api.HelloService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Service
 public class HelloServiceImpl implements HelloService {
 
     private  static  final Logger log = LoggerFactory.getLogger(HelloServiceImpl.class);

@@ -1,5 +1,6 @@
 package client;
 
+import api.ByeService;
 import api.HelloObject;
 import api.HelloService;
 import core.serializer.CommonSerializer;
@@ -16,6 +17,9 @@ public class TestClient {
         HelloObject object = new HelloObject(12, "This is a message");
         String res = helloService.Hello(object);
         System.out.println(res);
+        ByeService byeService = rpcClientProxy.getProxy(ByeService.class);
+        System.out.println(byeService.bye("Netty"));
+
     }
 }
 
