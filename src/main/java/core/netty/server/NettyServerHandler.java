@@ -59,7 +59,7 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<RpcRequest> 
         if (evt instanceof IdleStateEvent) {
             IdleState state = ((IdleStateEvent) evt).state();
             if (state == IdleState.READER_IDLE) {
-                logger.info("长时间未收到心跳包，断开连接...");
+                logger.info("长时间未收到心跳包，断开连接{}...",ctx.channel().remoteAddress());
                 ctx.close();
             }
         } else {

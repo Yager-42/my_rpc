@@ -20,9 +20,9 @@ public class NacosServiceRegistry implements ServiceRegistry{
     }
 
     @Override
-    public void register(String serviceName, InetSocketAddress inetSocketAddress) {
+    public void register(String serviceName, InetSocketAddress inetSocketAddress,String group) {
         try{
-            NacosUtil.registerService(serviceName, inetSocketAddress);
+            NacosUtil.registerService(serviceName, inetSocketAddress,group);
         }catch (NacosException e){
             logger.error("注册服务时有错误发生:", e);
             throw new RpcException(RpcError.REGISTER_SERVICE_FAILED);

@@ -54,4 +54,9 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<RpcResponse>
             super.userEventTriggered(ctx, evt);
         }
     }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+    }
 }

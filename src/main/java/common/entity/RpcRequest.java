@@ -36,6 +36,10 @@ public class RpcRequest implements Serializable {
      * 是否是心跳包
      */
     private Boolean heartBeat;
+    /**
+     * 组
+     */
+    private String group;
 
     public RpcRequest(){
 
