@@ -5,6 +5,7 @@ import core.codec.CommonDecoder;
 import core.codec.CommonEncoder;
 import core.serializer.CommonSerializer;
 import exception.RpcException;
+import fuse.FuseProtector;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -23,7 +24,8 @@ public class ChannelProvider {
     private static final Logger logger = LoggerFactory.getLogger(ChannelProvider.class);
     private static EventLoopGroup eventLoopGroup;
     private static Bootstrap bootstrap = initializeBootstrap();
-    private static Map<String, Channel> channels = new ConcurrentHashMap<>();
+    public static Map<String, Channel> channels = new ConcurrentHashMap<>();
+    public static FuseProtector fuseProtector = new FuseProtector();
 
 
     private static Bootstrap initializeBootstrap() {
@@ -48,6 +50,7 @@ public class ChannelProvider {
                 return channel;
             } else{
                 channels.remove(key);
+                fuseProtector.initCache(channels);
             }
         }
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
@@ -67,6 +70,7 @@ public class ChannelProvider {
             return null;
         }
         channels.put(key, channel);
+        fuseProtector.initCache(channels);
         return channel;
     }
 

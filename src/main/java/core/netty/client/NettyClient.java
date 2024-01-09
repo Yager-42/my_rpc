@@ -2,6 +2,7 @@ package core.netty.client;
 
 import common.entity.RpcRequest;
 import common.entity.RpcResponse;
+import common.enumerate.FuseState;
 import common.enumerate.RpcError;
 import core.loadbalancer.LoadBalancer;
 import core.loadbalancer.RandomLoadBalancer;
@@ -24,6 +25,7 @@ import core.registry.ServiceDiscovery;
 import util.RpcMessageChecker;
 
 import java.net.InetSocketAddress;
+import java.nio.channels.Channels;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -63,18 +65,28 @@ public class NettyClient implements RpcClient {
             logger.error("未设置序列化器");
             throw new RpcException(RpcError.SERIALIZER_NOT_FOUND);
         }
-
         CompletableFuture<RpcResponse> resultFuture = new CompletableFuture<>();
         try {
             InetSocketAddress inetSocketAddress = serviceDiscovery.lookupService(rpcRequest.getInterfaceName(),rpcRequest.getGroup());
+            String key = inetSocketAddress.toString() + serializer.getCode();
+            if(!ChannelProvider.fuseProtector.checkService(key)){
+                logger.info("请求熔断");
+                if(ChannelProvider.fuseProtector.serviceStateCache.get(key).getFuseState()== FuseState.CLOSE){
+                    ChannelProvider.channels.remove(key);
+                    ChannelProvider.fuseProtector.serviceStateCache.remove(key);
+                }
+                return null;
+            }
             Channel channel = ChannelProvider.get(inetSocketAddress, serializer);
             if(channel.isActive()) {
                 unprocessedRequests.put(rpcRequest.getRequestId(), resultFuture);
                 channel.writeAndFlush(rpcRequest).addListener((ChannelFutureListener)future1 -> {
+                    ChannelProvider.fuseProtector.increaseRequest(key);
                     if (future1.isSuccess()) {
                         logger.info(String.format("客户端发送消息: %s", rpcRequest.toString()));
                     } else {
                         future1.channel().close();
+                        ChannelProvider.fuseProtector.increaseExcepts(key);
                         resultFuture.completeExceptionally(future1.cause());
                         logger.error("发送消息时有错误发生: ", future1.cause());
                     }
